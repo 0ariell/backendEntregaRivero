@@ -1,0 +1,41 @@
+[
+  {
+    "id": 1,
+    "title": "Zapatillas Running",
+    "description": "Zapatillas livianas de running, ideal para entrenamiento diario.",
+    "code": "ZR-001",
+    "price": 8500,
+    "status": true,
+    "stock": 25,
+    "category": "Calzado Deportivo",
+    "thumbnails": [
+      "/images/zapatillas-running-1.jpg",
+      "/images/zapatillas-running-2.jpg"
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Remera Básica",
+    "description": "Remera de algodón 100%, corte recto unisex.",
+    "code": "RB-002",
+    "price": 2200,
+    "status": true,
+    "stock": 100,
+    "category": "Indumentaria",
+    "thumbnails": ["/images/remera-basica-blanca.jpg"]
+  },
+  {
+    "id": 3,
+    "title": "Mochila Urbana",
+    "description": "Mochila resistente al agua con bolsillos múltiples.",
+    "code": "MU-003",
+    "price": 5400,
+    "status": true,
+    "stock": 40,
+    "category": "Accesorios",
+    "thumbnails": [
+      "/images/mochila-urbana-negra.jpg",
+      "/images/mochila-urbana-gris.jpg"
+    ]
+  }
+]

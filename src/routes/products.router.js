@@ -1,35 +1,39 @@
-const { Router } = require("express");
-const ProductManager = require("../managers/ProductManager");
+const { Router } = require('express');
+const ProductManager = require('../managers/ProductManager');
 const pm = new ProductManager();
 const router = Router();
 
-// GET /api/products/
-router.get("/", async (req, res) => {
-  res.json(await pm.getAll());
+router.get('/', async (req, res) => {
+  const result = await pm.getPaginated(req.query);
+  res.json(result);
 });
 
-// GET /api/products/:pid
-router.get("/:pid", async (req, res) => {
+router.get('/:pid', async (req, res) => {
   const p = await pm.getById(req.params.pid);
-  res.json(p || { error: "Producto no encontrado" });
+  if (!p) return res.status(404).json({ error: 'Producto no encontrado' });
+  res.json(p);
 });
 
-// POST /api/products/
-router.post("/", async (req, res) => {
+router.post('/', async (req, res) => {
   const newP = await pm.add(req.body);
+  const io = req.app.get('io');
+  if (io) io.emit('products', await pm.getPaginated({}));
   res.status(201).json(newP);
 });
 
-// PUT /api/products/:pid
-router.put("/:pid", async (req, res) => {
+router.put('/:pid', async (req, res) => {
   const updated = await pm.update(req.params.pid, req.body);
-  res.json(updated || { error: "No se pudo actualizar" });
+  if (!updated) return res.status(404).json({ error: 'No se pudo actualizar' });
+  const io = req.app.get('io');
+  if (io) io.emit('products', await pm.getPaginated({}));
+  res.json(updated);
 });
 
-// DELETE /api/products/:pid
-router.delete("/:pid", async (req, res) => {
+router.delete('/:pid', async (req, res) => {
   await pm.delete(req.params.pid);
-  res.json({ status: "Producto eliminado" });
+  const io = req.app.get('io');
+  if (io) io.emit('products', await pm.getPaginated({}));
+  res.json({ status: 'Producto eliminado' });
 });
 
 module.exports = router;

@@ -1,42 +1,57 @@
-const fs = require("fs").promises;
-const path = require("path");
+const Cart = require('../models/cart.model');
 
 class CartManager {
-  constructor() {
-    this.file = path.join(__dirname, "../data/cart.json");
-  }
-
-  async _read() {
-    const txt = await fs.readFile(this.file, "utf-8");
-    return JSON.parse(txt || "[]");
-  }
-
-  async _write(data) {
-    await fs.writeFile(this.file, JSON.stringify(data, null, 2));
-  }
-
   async create() {
-    const carts = await this._read();
-    const id = carts.length ? carts[carts.length - 1].id + 1 : 1;
-    const newCart = { id, products: [] };
-    carts.push(newCart);
-    await this._write(carts);
-    return newCart;
+    const cart = await Cart.create({ products: [] });
+    return cart.toObject();
   }
 
   async get(id) {
-    return (await this._read()).find((c) => c.id == id);
+    return Cart.findById(id).populate('products.product').lean();
   }
 
   async addProduct(cid, pid) {
-    const carts = await this._read();
-    const cart = carts.find((c) => c.id == cid);
+    const cart = await Cart.findById(cid);
     if (!cart) return null;
-    const item = cart.products.find((p) => p.product == pid);
+    const item = cart.products.find((p) => p.product.toString() === pid);
     if (item) item.quantity++;
     else cart.products.push({ product: pid, quantity: 1 });
-    await this._write(carts);
-    return cart;
+    await cart.save();
+    return cart.populate('products.product');
+  }
+
+  async removeProduct(cid, pid) {
+    const cart = await Cart.findById(cid);
+    if (!cart) return null;
+    cart.products = cart.products.filter((p) => p.product.toString() !== pid);
+    await cart.save();
+    return cart.populate('products.product');
+  }
+
+  async updateProducts(cid, products) {
+    const cart = await Cart.findById(cid);
+    if (!cart) return null;
+    cart.products = products;
+    await cart.save();
+    return cart.populate('products.product');
+  }
+
+  async updateQuantity(cid, pid, qty) {
+    const cart = await Cart.findById(cid);
+    if (!cart) return null;
+    const item = cart.products.find((p) => p.product.toString() === pid);
+    if (!item) return null;
+    item.quantity = qty;
+    await cart.save();
+    return cart.populate('products.product');
+  }
+
+  async deleteAll(cid) {
+    const cart = await Cart.findById(cid);
+    if (!cart) return null;
+    cart.products = [];
+    await cart.save();
+    return cart.populate('products.product');
   }
 }
 

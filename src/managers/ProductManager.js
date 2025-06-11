@@ -1,49 +1,71 @@
-const fs = require("fs").promises;
-const path = require("path");
+const Product = require('../models/product.model');
 
 class ProductManager {
-  constructor() {
-    this.file = path.join(__dirname, "../data/products.json");
-  }
-
-  async _read() {
-    const txt = await fs.readFile(this.file, "utf-8");
-    return JSON.parse(txt || "[]");
-  }
-
-  async _write(data) {
-    await fs.writeFile(this.file, JSON.stringify(data, null, 2));
-  }
-
   async getAll() {
-    return this._read();
+    return Product.find().lean();
+  }
+
+  async getPaginated(params) {
+    const limit = parseInt(params.limit) || 10;
+    const page = parseInt(params.page) || 1;
+    const sort = params.sort === 'asc' ? 1 : params.sort === 'desc' ? -1 : null;
+    const query = params.query;
+
+    const filter = {};
+    if (query !== undefined) {
+      if (query === 'true' || query === 'false') filter.status = query === 'true';
+      else filter.category = query;
+    }
+
+    const sortObj = sort ? { price: sort } : {};
+    const skip = (page - 1) * limit;
+
+    const [total, products] = await Promise.all([
+      Product.countDocuments(filter),
+      Product.find(filter).sort(sortObj).skip(skip).limit(limit).lean(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit) || 1;
+    const prevPage = page > 1 ? page - 1 : null;
+    const nextPage = page < totalPages ? page + 1 : null;
+
+    return {
+      status: 'success',
+      payload: products,
+      totalPages,
+      prevPage,
+      nextPage,
+      page,
+      hasPrevPage: prevPage !== null,
+      hasNextPage: nextPage !== null,
+      prevLink: prevPage
+        ? `?page=${prevPage}&limit=${limit}${params.sort ? `&sort=${params.sort}` : ''}${
+            params.query ? `&query=${params.query}` : ''
+          }`
+        : null,
+      nextLink: nextPage
+        ? `?page=${nextPage}&limit=${limit}${params.sort ? `&sort=${params.sort}` : ''}${
+            params.query ? `&query=${params.query}` : ''
+          }`
+        : null,
+    };
   }
 
   async getById(id) {
-    return (await this._read()).find((p) => p.id == id);
+    return Product.findById(id).lean();
   }
 
-  async add(product) {
-    const items = await this._read();
-    const id = items.length ? items[items.length - 1].id + 1 : 1;
-    const newProd = { id, ...product };
-    items.push(newProd);
-    await this._write(items);
-    return newProd;
+  async add(data) {
+    const prod = await Product.create(data);
+    return prod.toObject();
   }
 
   async update(id, updates) {
-    const items = await this._read();
-    const idx = items.findIndex((p) => p.id == id);
-    if (idx < 0) return null;
-    items[idx] = { ...items[idx], ...updates, id };
-    await this._write(items);
-    return items[idx];
+    return Product.findByIdAndUpdate(id, updates, { new: true }).lean();
   }
 
   async delete(id) {
-    const items = (await this._read()).filter((p) => p.id != id);
-    await this._write(items);
+    await Product.findByIdAndDelete(id);
   }
 }
 

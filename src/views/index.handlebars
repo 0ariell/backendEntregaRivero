@@ -1,0 +1,16 @@
+<h1>Productos</h1>
+<ul>
+  {{#each products}}
+    <li>
+      <a href="/products/{{this._id}}">{{this.title}}</a> - ${{this.price}}
+      <form method="post" action="/api/carts/{{../cartId}}/product/{{this._id}}" style="display:inline">
+        <button type="submit">Agregar al carrito</button>
+      </form>
+    </li>
+  {{/each}}
+</ul>
+<nav>
+  {{#if hasPrevPage}}<a href="/products{{prevLink}}">Prev</a>{{/if}}
+  <span>{{page}} / {{totalPages}}</span>
+  {{#if hasNextPage}}<a href="/products{{nextLink}}">Next</a>{{/if}}
+</nav>
